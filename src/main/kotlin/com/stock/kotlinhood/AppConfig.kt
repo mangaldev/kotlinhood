@@ -1,51 +1,68 @@
 package com.stock.kotlinhood
 
+import com.stock.kotlinhood.controller.QuoteController
+import com.stock.kotlinhood.mapper.QuoteMapper
 import com.stock.kotlinhood.mapper.StockMapper
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
-import org.apache.ibatis.session.SqlSessionFactory
-import org.mybatis.spring.SqlSessionFactoryBean
-import org.mybatis.spring.SqlSessionTemplate
-import org.mybatis.spring.annotation.MapperScan
+import com.stock.kotlinhood.service.AlphavantageAPI
+import com.stock.kotlinhood.service.AlphavantageParameters
+import com.stock.kotlinhood.service.StockAPIService
+import org.springframework.boot.CommandLineRunner
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.jdbc.DataSourceBuilder
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.transaction.annotation.EnableTransactionManagement
+import org.springframework.web.client.RestTemplate
 import javax.sql.DataSource
 
 
 @Configuration
-@MapperScan(basePackages = ["com.stock.kotlinhood.mapper"])
-open class AppConfig {
+@ComponentScan
+@EnableTransactionManagement
+class AppConfig {
 
     @Bean
-    fun dataSource(): DataSource {
-        val hikariConfig = HikariConfig()
-        hikariConfig.jdbcUrl = "jdbc:postgresql://localhost:15432/db_metamorphosis?binaryTransfer=true"
-        hikariConfig.username = "postgres"
-        hikariConfig.password = "postgres"
-        hikariConfig.maximumPoolSize = 10
-        hikariConfig.connectionTimeout = 30_1000
-        return HikariDataSource(hikariConfig)
+    @ConfigurationProperties(prefix = "spring.datasource.kotlinhood")
+    fun dataSource(): DataSource = DataSourceBuilder.create().build()
+
+
+    @Bean
+    fun transactionManager(dataSource: DataSource) = DataSourceTransactionManager(dataSource)
+
+    @Bean
+    fun jdbcTemplate(dataSource: DataSource): JdbcTemplate {
+        return JdbcTemplate(dataSource)
     }
 
     @Bean
-    fun sqlSessionFactory(): SqlSessionFactory? {
-        val sessionFactory = SqlSessionFactoryBean()
-        sessionFactory.setDataSource(dataSource())
-        return sessionFactory.`object`
+    fun alpinoStockAPI(alphavantageParameters: AlphavantageParameters): StockAPIService {
+        return AlphavantageAPI(alphavantageParameters)
+    }
+
+
+    @Scheduled(cron = "\${cron.ingestion.expression}")
+    fun ingest(quoteService: QuoteMapper, stockMapper: StockMapper, stockAPIService: StockAPIService) {
+        QuoteController(quoteService, stockMapper, stockAPIService).startIngestion()
     }
 
     @Bean
-    fun stockRepo(): StockMapper {
-        val sessionTemplate = SqlSessionTemplate(sqlSessionFactory())
-        sessionTemplate.configuration.addMapper(StockMapper::class.java)
-        return sessionTemplate.getMapper<StockMapper>(StockMapper::class.java)
-    }
+    fun run() = CommandLineRunner {
+        println("Application started")
+//        val readText =
+//            URL("https://www.alphavantage.co/query?symbol=amzn&function=TIME_SERIES_INTRADAY&interval=1min&outputsize=full&apikey=I8IYEDH87AFUTEHT").readText()
 //
-//    @Bean
-//    fun stockMapper(): MapperFactoryBean<StockMapper> {
-//        val factoryBean = MapperFactoryBean<StockMapper>(StockMapper::class.java)
-//        factoryBean.setSqlSessionFactory(sqlSessionFactory())
-//        return factoryBean
-//    }
+//        println("readText = ${readText}")
+    }
+
+    @Bean
+    fun restTemplate(builder: RestTemplateBuilder): RestTemplate {
+        return builder.build()
+    }
+
 
 }

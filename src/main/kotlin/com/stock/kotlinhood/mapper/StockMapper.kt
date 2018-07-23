@@ -1,19 +1,37 @@
 package com.stock.kotlinhood.mapper
 
-import org.apache.ibatis.annotations.Param
-import org.apache.ibatis.annotations.Select
-import java.time.LocalDateTime
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.query
+import org.springframework.stereotype.Repository
+import java.sql.ResultSet
 
-//@Mapper
-interface StockMapper {
 
-    @Select("SELECT * FROM stockmarket.stocks WHERE symbol = #{symbol} order by tickedat")
-    fun findBySymbolOrderByTime(@Param("symbol") symbol: String): Stock
-//
-//    @Insert("Insert into stocks values (#{symbol},#{openPrice},#{closePrice},#{atTime})")
-//    fun insertStock(@Param("stock") stock: Stock)
+@Repository
+class StockMapper(@Qualifier("jdbcTemplate") val jdbcTemplate: JdbcTemplate) {
 
+    fun findBySymbol(symbol: String): Set<Stock> {
+        return jdbcTemplate.query("SELECT  * from stock_schema.stock where symbol = ?", symbol)
+        { rs: ResultSet, _: Int ->
+            Stock(
+                rs.getString(1),
+                rs.getString(2)
+
+            )
+        }.toSet()
+    }
+
+    fun findAll(): Set<Stock> {
+        return jdbcTemplate.query("SELECT  * from stock_schema.stock")
+        { rs: ResultSet, _: Int ->
+            Stock(
+                rs.getString(1),
+                rs.getString(2)
+
+            )
+        }.toSet()
+    }
 }
 
-data class Stock(val symbol: String, val openPrice: Double, val closePrice: Double, val atTime: LocalDateTime)
 
+data class Stock(val symbol: String, val name: String)

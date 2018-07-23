@@ -14,14 +14,30 @@
 --    limitations under the License.
 --
 
-drop table if exists stockmarket.stock;
+DROP schema stock_schema;
+create schema stock_schema;
+DROP TABLE stock_schema.stocks;
 
-CREATE TABLE stockmarket.stocks (
+CREATE TABLE stock_schema.stock (
   symbol varchar NULL,
-  openprice double precision NULL,
-  closeprice double precision NULL,
-  tickedat timestamptz NULL,
-  "createdAt" varchar NULL
+  name varchar NULL
+)
+WITH (
+OIDS=FALSE
+) ;
+
+
+CREATE TABLE stock_schema.quote (
+  symbol varchar NULL,
+  openPrice float8 NULL,
+  closePrice float8 NULL,
+  lowPrice float8 NULL,
+  highPrice float8 NULL,
+  beginsAt timestamptz NULL,
+  closesAt timestamptz NULL,
+  volume int8 NULL,
+  createdAt timestamptz NULL DEFAULT now(),
+    CONSTRAINT quote_pk PRIMARY KEY (symbol, beginsat, closesat)
 )
 WITH (
 OIDS=FALSE
