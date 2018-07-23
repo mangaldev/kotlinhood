@@ -2,7 +2,7 @@ package com.stock.kotlinhood.strategies
 
 import com.google.gson.Gson
 import com.google.gson.internal.LinkedTreeMap
-import java.io.File
+import java.net.URL
 import java.nio.charset.Charset
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -29,8 +29,8 @@ class DumpStrategy3 {
         var buyCounter = 0
         var totalProfit = 0.0
         var currentDateTime: LocalDateTime = LocalDateTime.MAX
-        val stocks = listOf<String>("CSCO")
-        val tillDate = "05-01-18"
+        val stocks = listOf<String>("AMZN")
+        val tillDate = "07-18-18"
         val stockSpread = "5min"
         @JvmStatic
         fun main(args: Array<String>) {
@@ -42,8 +42,11 @@ class DumpStrategy3 {
                 positiveTrend = 0
                 lastQuote = 0.0
                 buyCounter = 0
+
+                val stockDataInJSON = URL("https@ //doc-0c-8o-docs.googleusercontent.com/docs/securesc/gi7eis30enqmcbcdbm8078jei254c2q4/u5af23hajua946ctotf7vo6l72422rsp/1531980000000/10777790002965768511/10777790002965768511/1-2L8Bk_7KYfngEQTdYOpLmptHlkJU075?e=download&nonce=ril190m83uj5q&user=10777790002965768511&hash=rttkbam26h4rjnbm5m8a82fp6e16l0pp").readText(Charset.defaultCharset())
+                println("stockDataInJSONt = ${stockDataInJSON}")
                 val fromJson = Gson().fromJson<LinkedTreeMap<String, Any>>(
-                    File("/Users/mdev/Google Drive/TextWrangler/robinhood/$stock-2weeks-$stockSpread-$tillDate.json").readText(Charset.defaultCharset()),
+                    stockDataInJSON,
                     Map::class.java
                 )
                 val data = fromJson["Time Series ($stockSpread)"] as LinkedTreeMap<String, Any>
@@ -57,7 +60,7 @@ class DumpStrategy3 {
                     } else if (!stopLossIsNotSet() && closingPrice < stopLoss) {
                         println("$closingPrice is less than stopLoss : $stopLoss, so will be sold.")
                         sell(closingPrice)
-                    } else if (closingPrice > lastBoughtAt){//|| (!stopLossIsNotSet() && closingPrice > stopLoss)) {
+                    } else if (closingPrice > lastBoughtAt) {//|| (!stopLossIsNotSet() && closingPrice > stopLoss)) {
                         assignStopLoss(
                             lastBoughtAt,
                             closingPrice
