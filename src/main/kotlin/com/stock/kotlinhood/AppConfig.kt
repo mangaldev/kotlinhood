@@ -13,7 +13,7 @@ import javax.sql.DataSource
 
 
 @Configuration
-@MapperScan(basePackages = ["com.mangal.kotlinhood.mapper"])
+@MapperScan(basePackages = ["com.stock.kotlinhood.mapper"])
 open class AppConfig {
 
     @Bean
